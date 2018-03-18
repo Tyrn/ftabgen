@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from numpy import pi, sin
 import numpy as np
 import matplotlib.pyplot as plt
