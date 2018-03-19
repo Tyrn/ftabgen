@@ -240,27 +240,14 @@ freq_0 = 3
 ax.set_xlim([0, 1])
 ax.set_ylim([-10, 10])
 
-# Add two sliders for tweaking the parameters
-
-# ~ # Define an axes area and draw a slider in it
-# ~ amp_slider_ax  = fig.add_axes([0.25, 0.15, 0.65, 0.03], facecolor=axis_color)
-# ~ amp_slider = VertSlider(amp_slider_ax, 'Amp', 0.1, 10.0, valinit=amp_0)
-
-# ~ # Draw another slider
-# ~ freq_slider_ax = fig.add_axes([0.25, 0.1, 0.65, 0.03], facecolor=axis_color)
-# ~ freq_slider = VertSlider(freq_slider_ax, 'Freq', 0.1, 30.0, valinit=freq_0)
-
-sl_n, sl_step, sl_x, sl_y, sl_w, sl_h = (2, 0.05, 0.25, 0.03, 0.03, 0.4)
+sl_n, sl_step, sl_x, sl_y, sl_w, sl_h = (5, 0.155, 0.25, 0.03, 0.03, 0.4)
 sl = [None] * sl_n
+sl_valinit = 5
 
-# Define an axes area and draw a slider in it
-slider_ax = fig.add_axes([sl_x, sl_y, sl_w, sl_h], facecolor=axis_color)
-sl[0] = VertSlider(slider_ax, 'Freq', 0.1, 30.0, valinit=freq_0)
-
-# Draw another slider
-slider_ax  = fig.add_axes([sl_x + sl_step, sl_y, sl_w, sl_h], facecolor=axis_color)
-sl[1] = VertSlider(slider_ax, 'Amp', 0.1, 10.0, valinit=amp_0)
-
+for i, slider in enumerate(sl):
+    slider_ax = fig.add_axes([sl_x + i*sl_step, sl_y, sl_w, sl_h], facecolor=axis_color)
+    sl[i] = VertSlider(slider_ax, f"S{i}:", 0.1, 10.0, valinit=sl_valinit)
+    
 # Define an action for modifying the line when any slider's value changes
 def sliders_on_changed(val):
     line.set_ydata(signal(sl[1].val, sl[0].val))
