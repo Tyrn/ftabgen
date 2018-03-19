@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from scipy.interpolate import *
 from numpy import pi, sin
 import numpy as np
 import matplotlib.pyplot as plt
@@ -231,18 +232,34 @@ ax = fig.add_subplot(111)
 fig.subplots_adjust(left=0.25, bottom=0.50)
 
 t = np.arange(0.0, 1.0, 0.001)
-amp_0 = 5
-freq_0 = 3
+sl_valinit = 5
+amp_0 = sl_valinit
+freq_0 = sl_valinit
+
+x_given = np.linspace(0,10,10)
+y_given = np.cos(x_given**2.0/8.0)
+
+x_i      = np.linspace(0,10,100)      # interpolate to these points
+
+f_spline = interp1d(x_given, y_given, kind='cubic')
+y_is     = f_spline(x_i)
+
+#--------- Plot the results
+
+ax.plot(x_given, y_given, 'o')
+ax.plot(x_i, y_is, '--')
 
 # Draw the initial plot
 # The 'line' variable is used for modifying the line later
-[line] = ax.plot(t, signal(amp_0, freq_0), linewidth=2, color='red')
-ax.set_xlim([0, 1])
-ax.set_ylim([-10, 10])
+
+# ~ [line] = ax.plot(t, signal(amp_0, freq_0), linewidth=2, color='red')
+# ~ ax.set_xlim([0, 1])
+# ~ ax.set_ylim([-10, 10])
+ax.set_xlim([0, 10])
+ax.set_ylim([-1.0, 1.0])
 
 sl_n, sl_step, sl_x, sl_y, sl_w, sl_h = (5, 0.155, 0.25, 0.03, 0.03, 0.4)
 sl = [None] * sl_n
-sl_valinit = 5
 
 for i, slider in enumerate(sl):
     slider_ax = fig.add_axes([sl_x + i*sl_step, sl_y, sl_w, sl_h], facecolor=axis_color)
