@@ -220,9 +220,6 @@ class VertSlider(AxesWidget):
             
 # /\ Vertical slider /\
 
-def signal(amp, freq):
-    return amp * sin(2 * pi * freq * t)
-
 axis_color = 'lightgoldenrodyellow'
 
 fig = plt.figure(figsize=(12,12))
@@ -231,64 +228,75 @@ ax = fig.add_subplot(111)
 # Adjust the subplots region to leave some space for the sliders and buttons
 fig.subplots_adjust(left=0.25, bottom=0.50)
 
-t = np.arange(0.0, 1.0, 0.001)
-sl_valinit = 5
-amp_0 = sl_valinit
-freq_0 = sl_valinit
+sl_n, sl_step, sl_x, sl_y, sl_w, sl_h = (5, 0.155, 0.25, 0.03, 0.03, 0.4)
+sl = [(None, None)] * sl_n # (i, slider); is (i)t necessary? Let it be...
+sl_valinit = 0.0           # Floating 0.0 is essential.
 
-x_given = np.linspace(0,10,10)
-y_given = np.cos(x_given**2.0/8.0)
+x_given = np.linspace(0,sl_n,sl_n)
+y_given = np.array([sl_valinit]*sl_n)
+x_i     = np.linspace(0,sl_n,100)      # interpolate to these points
 
-x_i      = np.linspace(0,10,100)      # interpolate to these points
+y_bottom, y_top = -1.0, 1.0
 
-f_spline = interp1d(x_given, y_given, kind='cubic')
-y_is     = f_spline(x_i)
-
-#--------- Plot the results
-
-ax.plot(x_given, y_given, 'o')
-ax.plot(x_i, y_is, '--')
+# Plots the results
+def plot_function():
+    f_spline = interp1d(x_given, y_given, kind='cubic')
+    y_is     = f_spline(x_i)
+    ax.clear()
+    ax.plot(x_given, y_given, 'o')
+    ax.plot(x_i, y_is, '--')
+    ax.set_xlim([0, sl_n])
+    ax.set_ylim([y_bottom, y_top])
 
 # Draw the initial plot
-# The 'line' variable is used for modifying the line later
-
-# ~ [line] = ax.plot(t, signal(amp_0, freq_0), linewidth=2, color='red')
-# ~ ax.set_xlim([0, 1])
-# ~ ax.set_ylim([-10, 10])
-ax.set_xlim([0, 10])
-ax.set_ylim([-1.0, 1.0])
-
-sl_n, sl_step, sl_x, sl_y, sl_w, sl_h = (5, 0.155, 0.25, 0.03, 0.03, 0.4)
-sl = [None] * sl_n
+plot_function()
 
 for i, slider in enumerate(sl):
-    slider_ax = fig.add_axes([sl_x + i*sl_step, sl_y, sl_w, sl_h], facecolor=axis_color)
-    sl[i] = VertSlider(slider_ax, f"S{i}:", 0.1, 10.0, valinit=sl_valinit)
+    sl_ax = fig.add_axes([sl_x + i*sl_step, sl_y, sl_w, sl_h], facecolor=axis_color)
+    sl[i] = i, VertSlider(sl_ax, f"S{i}:", y_bottom, y_top, valinit=sl_valinit)
     
 # Define an action for modifying the line when any slider's value changes
-def sliders_on_changed(val):
-    line.set_ydata(signal(sl[1].val, sl[0].val))
-    fig.canvas.draw_idle()
+def sliders_on_changed(value):
+    for slider in sl:
+        i, s = slider
+        y_given[i] = s.val
+    plot_function()
 
 for slider in sl:
-    slider.on_changed(sliders_on_changed)
+    i, s = slider
+    s.on_changed(sliders_on_changed)
 
 # Add a button for resetting the parameters
 # ~ reset_button_ax = fig.add_axes([0.8, 0.025, 0.1, 0.04])
 reset_button_ax = fig.add_axes([0.025, 0.5, 0.15, 0.04])
 reset_button = Button(reset_button_ax, 'Reset', color=axis_color, hovercolor='0.975')
+
 def reset_button_on_clicked(mouse_event):
     for slider in sl:
-        slider.reset()
+        i, s = slider
+        s.reset()
 
 reset_button.on_clicked(reset_button_on_clicked)
+
+# Add a button for exporting the table
+export_button_ax = fig.add_axes([0.025, 0.84, 0.15, 0.04])
+export_button = Button(export_button_ax, 'Export', color=axis_color, hovercolor='0.975')
+
+def export_button_on_clicked(mouse_event):
+    for slider in sl:
+        i, s = slider
+        s.reset()
+
+export_button.on_clicked(export_button_on_clicked)
 
 # Add a set of radio buttons for changing color
 color_radios_ax = fig.add_axes([0.025, 0.6, 0.15, 0.15], facecolor=axis_color)
 color_radios = RadioButtons(color_radios_ax, ('red', 'blue', 'green'), active=0)
+
 def color_radios_on_clicked(label):
-    line.set_color(label)
+    # ~ line.set_color(label)
     fig.canvas.draw_idle()
+
 color_radios.on_clicked(color_radios_on_clicked)
 
 plt.show()
