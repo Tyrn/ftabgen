@@ -78,6 +78,8 @@ nosetests.xml
 # Docs
 /docs/build/*
 *.pdf
+*.npy
+*.json
 TODO
 
 # Test files

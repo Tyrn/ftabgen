@@ -5,6 +5,7 @@ from numpy import pi, sin
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button, RadioButtons, AxesWidget
+from pathlib import Path
 
 # \/ Vertical slider \/
 
@@ -238,6 +239,12 @@ x_i     = np.linspace(0,sl_n,100)      # interpolate to these points
 
 y_bottom, y_top = -1.0, 1.0
 
+tab_npy = "tab"
+
+# Dumps the results
+def dump_function():
+    np.save(tab_npy, y_given)
+
 # Plots the results
 def plot_function():
     f_spline = interp1d(x_given, y_given, kind='cubic')
@@ -248,14 +255,14 @@ def plot_function():
     ax.set_xlim([0, sl_n])
     ax.set_ylim([y_bottom, y_top])
 
-# Draw the initial plot
-plot_function()
-
 for i, slider in enumerate(sl):
     sl_ax = fig.add_axes([sl_x + i*sl_step, sl_y, sl_w, sl_h], facecolor=axis_color)
     sl[i] = i, VertSlider(sl_ax, f"S{i}:", y_bottom, y_top, valinit=sl_valinit)
     
-# Define an action for modifying the line when any slider's value changes
+# Draw the initial plot
+plot_function()
+
+    # Define an action for modifying the line when any slider's value changes
 def sliders_on_changed(value):
     for slider in sl:
         i, s = slider
@@ -283,11 +290,24 @@ export_button_ax = fig.add_axes([0.025, 0.84, 0.15, 0.04])
 export_button = Button(export_button_ax, 'Export', color=axis_color, hovercolor='0.975')
 
 def export_button_on_clicked(mouse_event):
-    for slider in sl:
-        i, s = slider
-        s.reset()
-
+    dump_function()
+    
 export_button.on_clicked(export_button_on_clicked)
+
+# Add a button for importing a table
+import_button_ax = fig.add_axes([0.025, 0.78, 0.15, 0.04])
+import_button = Button(import_button_ax, 'Import', color=axis_color, hovercolor='0.975')
+
+def import_button_on_clicked(mouse_event):
+    f = Path(tab_npy + ".npy")
+    if f.is_file():
+        y_given = np.load(f)
+        for slider in sl:
+            i, s = slider
+            s.set_val(y_given[i])
+        plot_function()
+    
+import_button.on_clicked(import_button_on_clicked)
 
 # Add a set of radio buttons for changing color
 color_radios_ax = fig.add_axes([0.025, 0.6, 0.15, 0.15], facecolor=axis_color)
