@@ -228,13 +228,18 @@ class VertSlider(AxesWidget):
 # * * Snippets * *
 
 g_table_name    = "table"
-g_table_size    = 100
+g_table_size    = 128
 
-gc_table_src = (
-    "uint16_t {}[{}] ="
-    "{"
-    "table here"
-    "}"
+gc_table_src_head = (
+    f'#include "{g_table_name}.h"\n'
+    f"uint16_t {g_table_name}[{g_table_size}] =\n"
+    "{\n"
+)
+
+g_table_src_body = "*** Body not yet generated ***\n"
+
+gc_table_src_tail = (
+    "};\n"
 )
 
 # * * Global state * *
@@ -254,12 +259,22 @@ g_bottom_y, g_top_y = -1.0, 1.0
 
 # * * Helpers * *
 
+def generate_table_body(interp_spline_y):
+    acc, cnt = "", 1
+    for y in interp_spline_y:
+        acc += f"{'  ' if cnt - 1 == 0 else ', '}{y}" + ("\n" if cnt % 8 == 0 else "")
+        cnt += 1
+    return acc
+
 def plot_curve():
+    global g_table_src_body
+    
     f_spline = interp1d(g_curve_x, g_curve_y, kind='cubic')
-    y_is     = f_spline(gc_i_x)
+    is_y     = f_spline(gc_i_x)
+    g_table_src_body = generate_table_body(is_y)
     gc_ax.clear()
     gc_ax.plot(g_curve_x, g_curve_y, 'o')
-    gc_ax.plot(gc_i_x, y_is, '--')
+    gc_ax.plot(gc_i_x, is_y, '--')
     gc_ax.set_xlim([0, gc_sl_n])
     gc_ax.set_ylim([g_bottom_y, g_top_y])
 
@@ -278,6 +293,9 @@ def reset_button_on_clicked(mouse_event):
 
 def export_button_on_clicked(mouse_event):
     np.save(g_table_name, g_curve_y)
+    # ~ print(gc_table_src_head)
+    # ~ print(g_table_src_body)
+    # ~ print(gc_table_src_tail)
     
 def import_button_on_clicked(mouse_event):
     f = Path(g_table_name + ".npy")
