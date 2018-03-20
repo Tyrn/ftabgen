@@ -221,102 +221,106 @@ class VertSlider(AxesWidget):
             
 # /\ Vertical slider /\
 
-axis_color = 'lightgoldenrodyellow'
+# * * Global state
 
-fig = plt.figure(figsize=(12,12))
-ax = fig.add_subplot(111)
+# g_ : global objects.
+# gc_: 'const' global objects; never supposed to
+# appear left of '=' after initialization.
 
-# Adjust the subplots region to leave some space for the sliders and buttons
-fig.subplots_adjust(left=0.25, bottom=0.50)
+gc_fig = plt.figure(figsize=(12,12))
+gc_ax  = gc_fig.add_subplot(111)
 
-sl_n, sl_step, sl_x, sl_y, sl_w, sl_h = (5, 0.155, 0.25, 0.03, 0.03, 0.4)
-sl = [(None, None)] * sl_n # (i, slider); is (i)t necessary? Let it be...
-sl_valinit = 0.0           # Floating 0.0 is essential.
+gc_sl_n = 5
+gc_sl = [(None, None)] * gc_sl_n # (i, slider); is (i)t necessary? Let it be...
+g_sl_valinit = 0.0               # Floating 0.0 is essential.
 
-x_given = np.linspace(0,sl_n,sl_n)
-y_given = np.array([sl_valinit]*sl_n)
-x_i     = np.linspace(0,sl_n,100)      # interpolate to these points
+g_curve_x = np.linspace(0, gc_sl_n, gc_sl_n)
+g_curve_y = np.array([g_sl_valinit]*gc_sl_n)
+g_x_i     = np.linspace(0, gc_sl_n, 100)      # interpolate to these points
 
-y_bottom, y_top = -1.0, 1.0
+g_bottom_y, g_top_y = -1.0, 1.0
 
-tab_npy = "tab"
+g_npy = "table"
 
-# Dumps the results
-def dump_function():
-    np.save(tab_npy, y_given)
+# * * Helpers
 
-# Plots the results
-def plot_function():
-    f_spline = interp1d(x_given, y_given, kind='cubic')
-    y_is     = f_spline(x_i)
-    ax.clear()
-    ax.plot(x_given, y_given, 'o')
-    ax.plot(x_i, y_is, '--')
-    ax.set_xlim([0, sl_n])
-    ax.set_ylim([y_bottom, y_top])
+def plot_curve():
+    f_spline = interp1d(g_curve_x, g_curve_y, kind='cubic')
+    y_is     = f_spline(g_x_i)
+    gc_ax.clear()
+    gc_ax.plot(g_curve_x, g_curve_y, 'o')
+    gc_ax.plot(g_x_i, y_is, '--')
+    gc_ax.set_xlim([0, gc_sl_n])
+    gc_ax.set_ylim([g_bottom_y, g_top_y])
 
-for i, slider in enumerate(sl):
-    sl_ax = fig.add_axes([sl_x + i*sl_step, sl_y, sl_w, sl_h], facecolor=axis_color)
-    sl[i] = i, VertSlider(sl_ax, f"S{i}:", y_bottom, y_top, valinit=sl_valinit)
-    
-# Draw the initial plot
-plot_function()
+# * * Event handlers
 
-    # Define an action for modifying the line when any slider's value changes
 def sliders_on_changed(value):
-    for slider in sl:
+    for slider in gc_sl:
         i, s = slider
-        y_given[i] = s.val
-    plot_function()
-
-for slider in sl:
-    i, s = slider
-    s.on_changed(sliders_on_changed)
-
-# Add a button for resetting the parameters
-# ~ reset_button_ax = fig.add_axes([0.8, 0.025, 0.1, 0.04])
-reset_button_ax = fig.add_axes([0.025, 0.5, 0.15, 0.04])
-reset_button = Button(reset_button_ax, 'Reset', color=axis_color, hovercolor='0.975')
+        g_curve_y[i] = s.val
+    plot_curve()
 
 def reset_button_on_clicked(mouse_event):
-    for slider in sl:
+    for slider in gc_sl:
         i, s = slider
         s.reset()
 
-reset_button.on_clicked(reset_button_on_clicked)
-
-# Add a button for exporting the table
-export_button_ax = fig.add_axes([0.025, 0.84, 0.15, 0.04])
-export_button = Button(export_button_ax, 'Export', color=axis_color, hovercolor='0.975')
-
 def export_button_on_clicked(mouse_event):
-    dump_function()
+    np.save(g_npy, g_curve_y)
     
-export_button.on_clicked(export_button_on_clicked)
-
-# Add a button for importing a table
-import_button_ax = fig.add_axes([0.025, 0.78, 0.15, 0.04])
-import_button = Button(import_button_ax, 'Import', color=axis_color, hovercolor='0.975')
-
 def import_button_on_clicked(mouse_event):
-    f = Path(tab_npy + ".npy")
+    f = Path(g_npy + ".npy")
     if f.is_file():
-        y_given = np.load(f)
-        for slider in sl:
+        g_curve_y = np.load(f)
+        for slider in gc_sl:
             i, s = slider
-            s.set_val(y_given[i])
-        plot_function()
-    
-import_button.on_clicked(import_button_on_clicked)
-
-# Add a set of radio buttons for changing color
-color_radios_ax = fig.add_axes([0.025, 0.6, 0.15, 0.15], facecolor=axis_color)
-color_radios = RadioButtons(color_radios_ax, ('red', 'blue', 'green'), active=0)
+            s.set_val(g_curve_y[i])
+        plot_curve()
 
 def color_radios_on_clicked(label):
     # ~ line.set_color(label)
-    fig.canvas.draw_idle()
+    gc_fig.canvas.draw_idle()
 
-color_radios.on_clicked(color_radios_on_clicked)
+def main():
+    sl_step, sl_x, sl_y, sl_w, sl_h = (0.155, 0.25, 0.03, 0.03, 0.4)
+    axis_color, hover_color = 'lightgoldenrodyellow', '0.975'
 
-plt.show()
+    # * * Create widgets.
+
+    # Adjust the subplots region to leave some space for the sliders and buttons
+    gc_fig.subplots_adjust(left=0.25, bottom=0.50)
+    
+    for i, slider in enumerate(gc_sl):
+        sl_ax    = gc_fig.add_axes([sl_x + i*sl_step, sl_y, sl_w, sl_h], facecolor=axis_color)
+        gc_sl[i] = i, VertSlider(sl_ax, f"S{i}:", g_bottom_y, g_top_y, valinit=g_sl_valinit)
+        
+    # Draw the initial plot
+    plot_curve()
+
+    for slider in gc_sl:
+        i, s = slider
+        s.on_changed(sliders_on_changed)
+
+
+    br = Button(gc_fig.add_axes([0.025, 0.5, 0.15, 0.04]),
+                'Reset', color=axis_color, hovercolor=hover_color)
+    br.on_clicked(reset_button_on_clicked)
+
+    be = Button(gc_fig.add_axes([0.025, 0.84, 0.15, 0.04]),
+                'Export', color=axis_color, hovercolor=hover_color)
+    be.on_clicked(export_button_on_clicked)
+
+    bi = Button(gc_fig.add_axes([0.025, 0.78, 0.15, 0.04]),
+                'Import', color=axis_color, hovercolor=hover_color)
+    bi.on_clicked(import_button_on_clicked)
+
+    rbc = RadioButtons(gc_fig.add_axes([0.025, 0.6, 0.15, 0.15], facecolor=axis_color),
+                      ('red', 'blue', 'green'), active=0)
+    rbc.on_clicked(color_radios_on_clicked)
+
+    # * * Run the show
+    plt.show()
+
+if __name__ == '__main__':
+    main()
