@@ -221,11 +221,23 @@ class VertSlider(AxesWidget):
             
 # /\ Vertical slider /\
 
-# * * Global state
-
 # g_ : global objects.
 # gc_: 'const' global objects; never supposed to
 # appear left of '=' after initialization.
+
+# * * Snippets * *
+
+g_table_name    = "table"
+g_table_size    = 100
+
+gc_table_src = (
+    "uint16_t {}[{}] ="
+    "{"
+    "table here"
+    "}"
+)
+
+# * * Global state * *
 
 gc_fig = plt.figure(figsize=(12,12))
 gc_ax  = gc_fig.add_subplot(111)
@@ -236,24 +248,22 @@ g_sl_valinit = 0.0               # Floating 0.0 is essential.
 
 g_curve_x = np.linspace(0, gc_sl_n, gc_sl_n)
 g_curve_y = np.array([g_sl_valinit]*gc_sl_n)
-g_x_i     = np.linspace(0, gc_sl_n, 100)      # interpolate to these points
+gc_i_x    = np.linspace(0, gc_sl_n, g_table_size)      # Interpolate to these points.
 
 g_bottom_y, g_top_y = -1.0, 1.0
 
-g_npy = "table"
-
-# * * Helpers
+# * * Helpers * *
 
 def plot_curve():
     f_spline = interp1d(g_curve_x, g_curve_y, kind='cubic')
-    y_is     = f_spline(g_x_i)
+    y_is     = f_spline(gc_i_x)
     gc_ax.clear()
     gc_ax.plot(g_curve_x, g_curve_y, 'o')
-    gc_ax.plot(g_x_i, y_is, '--')
+    gc_ax.plot(gc_i_x, y_is, '--')
     gc_ax.set_xlim([0, gc_sl_n])
     gc_ax.set_ylim([g_bottom_y, g_top_y])
 
-# * * Event handlers
+# * * Event handlers * *
 
 def sliders_on_changed(value):
     for slider in gc_sl:
@@ -267,10 +277,10 @@ def reset_button_on_clicked(mouse_event):
         s.reset()
 
 def export_button_on_clicked(mouse_event):
-    np.save(g_npy, g_curve_y)
+    np.save(g_table_name, g_curve_y)
     
 def import_button_on_clicked(mouse_event):
-    f = Path(g_npy + ".npy")
+    f = Path(g_table_name + ".npy")
     if f.is_file():
         g_curve_y = np.load(f)
         for slider in gc_sl:
@@ -286,7 +296,7 @@ def main():
     sl_step, sl_x, sl_y, sl_w, sl_h = (0.155, 0.25, 0.03, 0.03, 0.4)
     axis_color, hover_color = 'lightgoldenrodyellow', '0.975'
 
-    # * * Create widgets.
+    # * * Create widgets * *
 
     # Adjust the subplots region to leave some space for the sliders and buttons
     gc_fig.subplots_adjust(left=0.25, bottom=0.50)
@@ -319,7 +329,7 @@ def main():
                       ('red', 'blue', 'green'), active=0)
     rbc.on_clicked(color_radios_on_clicked)
 
-    # * * Run the show
+    # * * Run the show * *
     plt.show()
 
 if __name__ == '__main__':
