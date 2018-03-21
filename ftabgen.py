@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+import sys
+
+if sys.version_info < (3, 4, 0):
+    sys.stderr.write("You need python 3.4 or later to run this script\n")
+    sys.exit(1)
+    
 from scipy.interpolate import *
 from numpy import pi, sin
 import numpy as np
@@ -232,7 +238,7 @@ g_table_size    = 128
 
 gc_table_src_head = (
     f'#include "{g_table_name}.h"\n'
-    f"uint16_t {g_table_name}[{g_table_size}] =\n"
+    f"uint16_t {g_table_name}[{g_table_size:>5}] =\n"
     "{\n"
 )
 
@@ -244,25 +250,30 @@ gc_table_src_tail = (
 
 # * * Global state * *
 
-gc_fig = plt.figure(figsize=(12,12))
-gc_ax  = gc_fig.add_subplot(111)
+g_bottom_y, g_top_y   = 0.0, 1.0
+g_left_x,   g_right_x = 0, 1
+g_ret_range           = 65535    # Max return value of the generated function
 
 gc_sl_n = 5
 gc_sl = [(None, None)] * gc_sl_n # (i, slider); is (i)t necessary? Let it be...
 g_sl_valinit = 0.0               # Floating 0.0 is essential.
 
-g_curve_x = np.linspace(0, gc_sl_n, gc_sl_n)
+g_curve_x = np.linspace(g_left_x, g_right_x, gc_sl_n)
 g_curve_y = np.array([g_sl_valinit]*gc_sl_n)
-gc_i_x    = np.linspace(0, gc_sl_n, g_table_size)      # Interpolate to these points.
+gc_i_x    = np.linspace(g_left_x, g_right_x, g_table_size)  # Interpolate to these points.
 
-g_bottom_y, g_top_y = -1.0, 1.0
+gc_fig = plt.figure(figsize=(12,12))
+gc_ax  = gc_fig.add_subplot(111)
 
 # * * Helpers * *
 
 def generate_table_body(interp_spline_y):
-    acc, cnt = "", 1
-    for y in interp_spline_y:
-        acc += f"{'  ' if cnt - 1 == 0 else ', '}{y}" + ("\n" if cnt % 8 == 0 else "")
+    acc, cnt, columns   = "", 1, 8
+    for raw_y in interp_spline_y:
+        y = int(raw_y*g_ret_range)
+        acc += (f"{' ' if cnt == 1 else ','}{y:>6}" +
+                ("\n" if cnt % columns == 0 else "") +
+                ("\n" if cnt % (columns*4) == 0 else ""))
         cnt += 1
     return acc
 
@@ -275,7 +286,7 @@ def plot_curve():
     gc_ax.clear()
     gc_ax.plot(g_curve_x, g_curve_y, 'o')
     gc_ax.plot(gc_i_x, is_y, '--')
-    gc_ax.set_xlim([0, gc_sl_n])
+    gc_ax.set_xlim([g_left_x, g_right_x])
     gc_ax.set_ylim([g_bottom_y, g_top_y])
 
 # * * Event handlers * *
@@ -293,9 +304,9 @@ def reset_button_on_clicked(mouse_event):
 
 def export_button_on_clicked(mouse_event):
     np.save(g_table_name, g_curve_y)
-    # ~ print(gc_table_src_head)
-    # ~ print(g_table_src_body)
-    # ~ print(gc_table_src_tail)
+    print(gc_table_src_head)
+    print(g_table_src_body)
+    print(gc_table_src_tail)
     
 def import_button_on_clicked(mouse_event):
     f = Path(g_table_name + ".npy")
