@@ -2,15 +2,16 @@
 
 import sys
 
-if sys.version_info < (3, 4, 0):
-    sys.stderr.write("You need python 3.4 or later to run this script\n")
+if sys.version_info < (3, 6, 0):
+    sys.stderr.write("You need python 3.6 or later to run this script\n")
     sys.exit(1)
     
+import os
 from scipy.interpolate import *
 from numpy import pi, sin
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider, Button, RadioButtons, AxesWidget
+from matplotlib.widgets import Slider, Button, RadioButtons, TextBox, AxesWidget
 from pathlib import Path
 
 # \/ Vertical slider \/
@@ -363,7 +364,7 @@ def import_button_on_clicked(mouse_event):
             s.set_val(g_curve_y[i])
         plot_curve()
 
-def color_radios_on_clicked(label):
+def domain_radios_on_clicked(label):
     global g_domain
     g_domain = int(label)
     gc_fig.canvas.draw_idle()
@@ -371,7 +372,8 @@ def color_radios_on_clicked(label):
 def main():
     sl_step, sl_x, sl_y, sl_w, sl_h = (0.158, 0.25, 0.03, 0.02, 0.4)
     axis_color, hover_color = 'lightgoldenrodyellow', '0.975'
-    left_panel_w = 0.15
+    lp_x, lp_w = 0.025, 0.15
+    tbl_y = 0.91
 
     # * * Create widgets * *
 
@@ -390,21 +392,33 @@ def main():
         s.on_changed(sliders_on_changed)
 
 
-    br = Button(gc_fig.add_axes([0.025, 0.5, left_panel_w, 0.04]),
+    tp = TextBox(gc_fig.add_axes([lp_x, tbl_y + 0.035, 0.875, 0.029]),
+                '', initial=os.getcwd())
+
+    ti = TextBox(gc_fig.add_axes([lp_x, tbl_y, 0.32, 0.029]),
+                'I', initial='Inc')
+
+    ts = TextBox(gc_fig.add_axes([lp_x + 0.35, tbl_y, 0.32, 0.029]),
+                'S', initial='Src')
+
+    tr = TextBox(gc_fig.add_axes([lp_x + 0.7, tbl_y, 0.175, 0.029]),
+                'R', initial='65536')
+
+    br = Button(gc_fig.add_axes([lp_x, 0.5, lp_w, 0.04]),
                 'Reset', color=axis_color, hovercolor=hover_color)
     br.on_clicked(reset_button_on_clicked)
 
-    be = Button(gc_fig.add_axes([0.025, 0.84, left_panel_w, 0.04]),
+    be = Button(gc_fig.add_axes([lp_x, 0.84, lp_w, 0.04]),
                 'Export', color=axis_color, hovercolor=hover_color)
     be.on_clicked(export_button_on_clicked)
 
-    bi = Button(gc_fig.add_axes([0.025, 0.78, left_panel_w, 0.04]),
+    bi = Button(gc_fig.add_axes([lp_x, 0.78, lp_w, 0.04]),
                 'Import', color=axis_color, hovercolor=hover_color)
     bi.on_clicked(import_button_on_clicked)
 
-    rbc = RadioButtons(gc_fig.add_axes([0.025, 0.6, left_panel_w, 0.15], facecolor=axis_color),
+    rbd = RadioButtons(gc_fig.add_axes([lp_x, 0.6, lp_w, 0.15], facecolor=axis_color),
                       ('128', '256', '512', '1024'), active=0)
-    rbc.on_clicked(color_radios_on_clicked)
+    rbd.on_clicked(domain_radios_on_clicked)
 
     # * * Run the show * *
     plt.show()
