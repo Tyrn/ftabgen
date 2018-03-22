@@ -404,7 +404,13 @@ def src_textbox_on_text_change(text):
 
 def retrieve_args():
     parser = argparse.ArgumentParser(description='''
-    Function generator
+    To generate a *.c file, containing the lookup table, and the corresponding
+    *.h file, specify a name as a valid C identifier in the command line argument.
+    Extension, if any, will be ignored. Specify interactively source and include
+    directories, and the domain and range of the function to be generated.
+    All the functions are exported as *.npy files into the current directory,
+    to be supplied as the command line argument, and imported interactively
+    as necessary.
     ''')
 
     if True:
