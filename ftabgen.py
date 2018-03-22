@@ -5,12 +5,13 @@ import sys
 if sys.version_info < (3, 6, 0):
     sys.stderr.write("You need python 3.6 or later to run this script\n")
     sys.exit(1)
-    
+
 from scipy.interpolate import *
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button, RadioButtons, TextBox, AxesWidget
 from pathlib import Path
+import argparse
 
 # \/ Vertical slider \/
 
@@ -223,16 +224,14 @@ class VertSlider(AxesWidget):
         """reset the slider to the initial value if needed"""
         if (self.val != self.valinit):
             self.set_val(self.valinit)
-            
+
 # /\ Vertical slider /\
 
 # g_ : global objects.
 # gc_: 'const' global objects; never supposed to
 # appear left of '=' after initialization.
 
-# * * Snippets * *
-
-g_name        = "foxtrot"
+g_name        = "42"
 gc_byte_range = 256
 g_domain      = 128       # Input domain of the generated function.
 g_range       = 65536     # Output range.
@@ -251,7 +250,7 @@ def generate_table_body(interp_spline_y):
     return acc
 
 g_table_src_body = "*** Body not yet generated ***\n"
-  
+
 def generate_source_files():
 
     def domain_mask():
@@ -302,21 +301,23 @@ def generate_source_files():
     table_src_tail = (
         "};\n"
     )
-    
+
     table_src = table_src_head + g_table_src_body + table_src_tail
-    
-    print(table_inc_body)
-    print(table_src)
-    
+
+    print("\n" + g_name + ".h:\n\n" + table_inc_body)
+    print(g_name + ".c:\n\n" + table_src)
+
     if Path(g_inc).is_dir():
         with open(Path.cwd().joinpath(g_inc).joinpath(g_name + ".h"), "w") as inc:
             inc.write(table_inc_body)
+    else:
+        print(f'Include directory "{g_inc}" not found')
     if Path(g_src).is_dir():
         with open(Path.cwd().joinpath(g_src).joinpath(g_name + ".c"), "w") as src:
             src.write(table_src)
-        
+    else:
+        print(f'Source directory "{g_src}" not found')
 
-# * * Global state * *
 
 g_bottom_y, g_top_y   = 0.0, 1.0
 g_left_x,   g_right_x = 0, 1
@@ -325,16 +326,12 @@ gc_sl_n = 5
 gc_sl = [(None, None)] * gc_sl_n # (i, slider); is (i)t necessary? Let's keep it, anyway.
 g_sl_valinit = 0.0               # Floating 0.0 is essential.
 
-g_curve_x = np.linspace(g_left_x, g_right_x, gc_sl_n)
-g_curve_y = np.array([g_sl_valinit]*gc_sl_n)
-
-gc_fig = plt.figure(figsize=(12,12))
-gc_ax  = gc_fig.add_subplot(111)
+gc_args, g_curve_x, g_curve_y, gc_fig, gc_ax = None, None, None, None, None
 
 # * * Helpers * *
 
 def int_always(s):
-    try: 
+    try:
         int(s)
         return int(s)
     except ValueError:
@@ -342,7 +339,7 @@ def int_always(s):
 
 def plot_curve():
     global g_table_src_body
-    
+
     f_spline = interp1d(g_curve_x, g_curve_y, kind='cubic')
     i_x      = np.linspace(g_left_x, g_right_x, g_domain)  # Interpolate to these points.
     is_y     = f_spline(i_x)
@@ -370,7 +367,7 @@ def export_button_on_clicked(mouse_event):
     np.save(g_name, g_curve_y)
     plot_curve()
     generate_source_files()
-    
+
 def import_button_on_clicked(mouse_event):
     f = Path(g_name + ".npy")
     if f.is_file():
@@ -405,23 +402,49 @@ def src_textbox_on_text_change(text):
     g_src = text
     print(f'Src:    "{g_src}"')
 
+def retrieve_args():
+    parser = argparse.ArgumentParser(description='''
+    Function generator
+    ''')
+
+    if True:
+        parser.add_argument('function_name',
+                        help="Name for the function and generated files")
+    else:
+        parser.add_argument("-f", "--function-name",
+                        help="Name for the function and generated files")
+
+    rg = parser.parse_args()
+
+    return rg
+
 def main():
+    global gc_args, g_curve_x, g_curve_y, gc_fig, gc_ax
+
+    gc_args = retrieve_args()
+
+    g_curve_x = np.linspace(g_left_x, g_right_x, gc_sl_n)
+    g_curve_y = np.array([g_sl_valinit]*gc_sl_n)
+
+    gc_fig = plt.figure(figsize=(12,12))
+    gc_ax  = gc_fig.add_subplot(111)
+
     axis_color, hover_color = 'lightgoldenrodyellow', '0.975'
     sl_hstep, sl_x, sl_y, sl_w, sl_h = 0.163, 0.23, 0.05, 0.02, 0.4
     btn_h, btn_top, btn_vstep = 0.04, 0.62, 0.06
     lp_x, lp_w = 0.025, 0.15
     txt_top, txt_w, txt_h, txt_hstep  = 0.91, 0.279, 0.029, 0.298
     txt_label_color = 'brown'
-    
+
     # * * Create widgets * *
 
     # Adjust the subplots region to leave some space for the sliders and buttons
     gc_fig.subplots_adjust(left=sl_x, bottom=0.50)
-    
+
     for i, slider in enumerate(gc_sl):
         sl_ax    = gc_fig.add_axes([sl_x + i*sl_hstep, sl_y, sl_w, sl_h], facecolor=axis_color)
         gc_sl[i] = i, VertSlider(sl_ax, f"S{i}:", g_bottom_y, g_top_y, valinit=g_sl_valinit)
-        
+
     # Draw the initial plot
     plot_curve()
 
@@ -431,24 +454,27 @@ def main():
 
 
     tp = TextBox(gc_fig.add_axes([lp_x, txt_top + 0.035, 0.875, txt_h]),
-                '', initial=Path.cwd())  # Current directory.
+                '', initial=Path.cwd())        # Current directory.
     tp.label.set_color(txt_label_color)
 
     ti = TextBox(gc_fig.add_axes([lp_x, txt_top, txt_w, txt_h]),
-                'I', initial=g_inc)       # Include target directory.
+                'I', initial=g_inc)            # Include target directory.
     ti.on_text_change(inc_textbox_on_text_change)
     ti.label.set_color(txt_label_color)
 
     ts = TextBox(gc_fig.add_axes([lp_x + txt_hstep, txt_top, txt_w, txt_h]),
-                'S', initial=g_src)       # Source target directory.
+                'S', initial=g_src)            # Source target directory.
     ts.on_text_change(src_textbox_on_text_change)
     ts.label.set_color(txt_label_color)
 
     tn = TextBox(gc_fig.add_axes([lp_x + txt_hstep*2, txt_top, txt_w, txt_h]),
-                'N', initial=g_name)     # File and function basic name.
+                'N', initial=g_name)           # File and function name stem.
     tn.on_text_change(name_textbox_on_text_change)
     tn.label.set_color(txt_label_color)
     tn.text_disp.set_color('black')
+
+    if gc_args.function_name:
+        tn.set_val(Path(gc_args.function_name).resolve().stem)
 
     tr = TextBox(gc_fig.add_axes([lp_x, 0.852, lp_w, txt_h]),
                 'R', initial=str(g_range))     # Function range.
