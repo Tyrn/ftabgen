@@ -370,18 +370,19 @@ def domain_radios_on_clicked(label):
     gc_fig.canvas.draw_idle()
 
 def main():
-    sl_step, sl_x, sl_y, sl_w, sl_h = (0.158, 0.25, 0.03, 0.02, 0.4)
     axis_color, hover_color = 'lightgoldenrodyellow', '0.975'
+    sl_hstep, sl_x, sl_y, sl_w, sl_h = 0.163, 0.23, 0.05, 0.02, 0.4
+    btn_h, btn_top, btn_vstep = 0.04, 0.62, 0.06
     lp_x, lp_w = 0.025, 0.15
-    tbl_y = 0.91
+    txt_top, txt_w, txt_h, txt_hstep = 0.91, 0.279, 0.029, 0.298
 
     # * * Create widgets * *
 
     # Adjust the subplots region to leave some space for the sliders and buttons
-    gc_fig.subplots_adjust(left=0.25, bottom=0.50)
+    gc_fig.subplots_adjust(left=sl_x, bottom=0.50)
     
     for i, slider in enumerate(gc_sl):
-        sl_ax    = gc_fig.add_axes([sl_x + i*sl_step, sl_y, sl_w, sl_h], facecolor=axis_color)
+        sl_ax    = gc_fig.add_axes([sl_x + i*sl_hstep, sl_y, sl_w, sl_h], facecolor=axis_color)
         gc_sl[i] = i, VertSlider(sl_ax, f"S{i}:", g_bottom_y, g_top_y, valinit=g_sl_valinit)
         
     # Draw the initial plot
@@ -392,31 +393,35 @@ def main():
         s.on_changed(sliders_on_changed)
 
 
-    tp = TextBox(gc_fig.add_axes([lp_x, tbl_y + 0.035, 0.875, 0.029]),
+    tp = TextBox(gc_fig.add_axes([lp_x, txt_top + 0.035, 0.875, txt_h]),
                 '', initial=os.getcwd())
 
-    ti = TextBox(gc_fig.add_axes([lp_x, tbl_y, 0.32, 0.029]),
+    ti = TextBox(gc_fig.add_axes([lp_x, txt_top, txt_w, txt_h]),
                 'I', initial='Inc')
 
-    ts = TextBox(gc_fig.add_axes([lp_x + 0.35, tbl_y, 0.32, 0.029]),
+    ts = TextBox(gc_fig.add_axes([lp_x + txt_hstep, txt_top, txt_w, txt_h]),
                 'S', initial='Src')
 
-    tr = TextBox(gc_fig.add_axes([lp_x + 0.7, tbl_y, 0.175, 0.029]),
+    tn = TextBox(gc_fig.add_axes([lp_x + txt_hstep*2, txt_top, txt_w, txt_h]),
+                'N', initial='table')
+
+    tr = TextBox(gc_fig.add_axes([lp_x, 0.852, lp_w, txt_h]),
                 'R', initial='65536')
 
-    br = Button(gc_fig.add_axes([lp_x, 0.5, lp_w, 0.04]),
+    br = Button(gc_fig.add_axes([lp_x, btn_top - btn_vstep*2, lp_w, btn_h]),
                 'Reset', color=axis_color, hovercolor=hover_color)
     br.on_clicked(reset_button_on_clicked)
 
-    be = Button(gc_fig.add_axes([lp_x, 0.84, lp_w, 0.04]),
+    be = Button(gc_fig.add_axes([lp_x, btn_top, lp_w, btn_h]),
                 'Export', color=axis_color, hovercolor=hover_color)
     be.on_clicked(export_button_on_clicked)
 
-    bi = Button(gc_fig.add_axes([lp_x, 0.78, lp_w, 0.04]),
+    bi = Button(gc_fig.add_axes([lp_x, btn_top - btn_vstep, lp_w, btn_h]),
                 'Import', color=axis_color, hovercolor=hover_color)
     bi.on_clicked(import_button_on_clicked)
 
-    rbd = RadioButtons(gc_fig.add_axes([lp_x, 0.6, lp_w, 0.15], facecolor=axis_color),
+    rbd = RadioButtons(gc_fig.add_axes([lp_x, 0.68, lp_w, 0.15],
+                      facecolor=axis_color),
                       ('128', '256', '512', '1024'), active=0)
     rbd.on_clicked(domain_radios_on_clicked)
 
