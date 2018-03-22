@@ -410,8 +410,9 @@ def main():
     sl_hstep, sl_x, sl_y, sl_w, sl_h = 0.163, 0.23, 0.05, 0.02, 0.4
     btn_h, btn_top, btn_vstep = 0.04, 0.62, 0.06
     lp_x, lp_w = 0.025, 0.15
-    txt_top, txt_w, txt_h, txt_hstep = 0.91, 0.279, 0.029, 0.298
-
+    txt_top, txt_w, txt_h, txt_hstep  = 0.91, 0.279, 0.029, 0.298
+    txt_label_color = 'brown'
+    
     # * * Create widgets * *
 
     # Adjust the subplots region to leave some space for the sliders and buttons
@@ -431,22 +432,28 @@ def main():
 
     tp = TextBox(gc_fig.add_axes([lp_x, txt_top + 0.035, 0.875, txt_h]),
                 '', initial=Path.cwd())  # Current directory.
+    tp.label.set_color(txt_label_color)
 
     ti = TextBox(gc_fig.add_axes([lp_x, txt_top, txt_w, txt_h]),
                 'I', initial=g_inc)       # Include target directory.
     ti.on_text_change(inc_textbox_on_text_change)
+    ti.label.set_color(txt_label_color)
 
     ts = TextBox(gc_fig.add_axes([lp_x + txt_hstep, txt_top, txt_w, txt_h]),
                 'S', initial=g_src)       # Source target directory.
     ts.on_text_change(src_textbox_on_text_change)
+    ts.label.set_color(txt_label_color)
 
     tn = TextBox(gc_fig.add_axes([lp_x + txt_hstep*2, txt_top, txt_w, txt_h]),
                 'N', initial=g_name)     # File and function basic name.
     tn.on_text_change(name_textbox_on_text_change)
+    tn.label.set_color(txt_label_color)
+    tn.text_disp.set_color('black')
 
     tr = TextBox(gc_fig.add_axes([lp_x, 0.852, lp_w, txt_h]),
                 'R', initial=str(g_range))     # Function range.
     tr.on_text_change(range_textbox_on_text_change)
+    tr.label.set_color(txt_label_color)
 
     br = Button(gc_fig.add_axes([lp_x, btn_top - btn_vstep*2, lp_w, btn_h]),
                 'Reset', color=axis_color, hovercolor=hover_color)
