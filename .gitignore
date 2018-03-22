@@ -21,6 +21,8 @@ lib64/
 lib64
 __pycache__/
 share/
+Src/
+Inc/
 
 # Installer logs
 pip-log.txt
