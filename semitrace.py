@@ -33,35 +33,49 @@ gc_arg_set    = ['on', 'off', 'remove', 'removeall']
 def consume_line(line):
     """
     Returns the (source) line; makes it commented/uncommented, as appropriate.
-    If the line is to be dropped, returns None.
+    If the line is to be dropped, returns (True, line).
     """
     if gc_args.trace_on == gc_arg_set[0]: # on:        Remove comments, if any.
         if gc_all_ex.findall(line) and gc_dslash_ex.match(line):
-            return gc_dslash_ex.sub("", line, 1)
-        return line
+            return False, gc_dslash_ex.sub("", line, 1)
+        return False, line
     if gc_args.trace_on == gc_arg_set[1]: # off:       Comment out, if not commented.
         if gc_all_ex.findall(line) and not gc_dslash_ex.match(line):
-            return '//' + line
-        return line
+            return False, '//' + line
+        return False, line
     if gc_args.trace_on == gc_arg_set[2]: # remove:    Remove uncommented std lines.
-        return line  # Not implemented
+        if gc_ini_ex.findall(line) and not gc_dslash_ex.match(line):
+            return False, '//' + line
+        if gc_std_ex.findall(line) and not gc_dslash_ex.match(line):
+            return True, line
+        return False, line
     if gc_args.trace_on == gc_arg_set[3]: # removeall: Remove every std line.
-        return line  # Not implemented
-    return line
+        if gc_ini_ex.findall(line) and not gc_dslash_ex.match(line):
+            return False, '//' + line
+        if gc_std_ex.findall(line):
+            return True, line
+        return False, line
+    return False, line
 
 
 def check_file(path):
-
+    header = f'*** {str(path)}'
     out_line = ""
     with open(path, "r") as f_r:
         first_change = True
         for line in f_r.readlines():
-            o_line = consume_line(line)
-            out_line += o_line if o_line else ""
-            if gc_all_ex.findall(o_line):
+            drop_it, o_line = consume_line(line)
+            if drop_it:
                 if first_change:
                     first_change = False
-                    print(f'*** {str(path)}') # Will not work for remove[all]
+                    print(header)
+                print(f'Removed: {o_line.rstrip()}')
+            else:
+                out_line += o_line
+            if not drop_it and gc_all_ex.findall(o_line):
+                if first_change:
+                    first_change = False
+                    print(header)
                 print(o_line.rstrip())
     with open(path, "w") as f_w:
         f_w.write(out_line)
