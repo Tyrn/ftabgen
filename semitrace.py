@@ -42,28 +42,32 @@ def consume_line(line):
 
 def check_file(path):
     print(f'\n*** {str(path)}\n')
-    with open(path, "r") as f:
-      for line in f.readlines():
-          o_line = consume_line(line)
-          if gc_all_ex.findall(o_line):
-              print(o_line)
+    out_line = ""
+    with open(path, "r") as f_r:
+        for line in f_r.readlines():
+            o_line = consume_line(line)
+            out_line += o_line if o_line else ""
+            if gc_all_ex.findall(o_line):
+                print(o_line.rstrip())
+    with open(path, "w") as f_w:
+        f_w.write(out_line)
 
 
-def check_sources():
+def check_src_dir():
     src = Path(g_src)
     if src.is_dir():
-      for i in src.glob('*.c'):
-          if i.is_file():
-              check_file(i)
+        for i in src.glob('*.c'):
+            if i.is_file():
+                check_file(i)
 
 
 def retrieve_args():
     parser = argparse.ArgumentParser(description='''
-    Trace enabled by uncommenting printf() lines, disabled by commenting them.
+    Trace enabled by uncommenting printf(), etc. lines, disabled by commenting them.
     ''')
 
     parser.add_argument('trace_on',
-                    help='on: Comment out trace statements, off: uncomment')
+                    help='on: uncomment trace statements, off: comment them out')
 
     rg = parser.parse_args()
     return rg
@@ -78,7 +82,7 @@ def main():
         print(f'Unrecognized option "{gc_args.trace_on}"')
         sys.exit()
 
-    check_sources()
+    check_src_dir()
 
 if __name__ == '__main__':
     main()
