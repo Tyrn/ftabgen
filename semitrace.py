@@ -10,12 +10,17 @@ from pathlib import Path
 import argparse
 import re
 
+
 gc_args       = None
 g_src         = 'Src'
 gc_ini        = r"\binitialise_monitor_handles\b"
 gc_std_set    = (
                 r"\bprintf\b"
                 r"|\bscanf\b"
+                r"|\bsprintf\b"
+                r"|\bfopen\b"
+                r"|\bfwrite\b"
+                r"|\bfclose\b"
 )
 gc_dslash_ex  = re.compile(r"^\s*\/\/")
 gc_ini_ex     = re.compile(gc_ini)
@@ -24,7 +29,12 @@ gc_all_ex     = re.compile(gc_ini + '|' + gc_std_set)
 
 gc_arg_set    = ['on', 'off', 'remove', 'removeall']
 
+
 def consume_line(line):
+    """
+    Returns the (source) line; makes it commented/uncommented, as appropriate.
+    If the line is to be dropped, returns None.
+    """
     if gc_args.trace_on == gc_arg_set[0]: # on:        Remove comments, if any.
         if gc_all_ex.findall(line) and gc_dslash_ex.match(line):
             return gc_dslash_ex.sub("", line, 1)
@@ -34,20 +44,24 @@ def consume_line(line):
             return '//' + line
         return line
     if gc_args.trace_on == gc_arg_set[2]: # remove:    Remove uncommented std lines.
-        return line
+        return line  # Not implemented
     if gc_args.trace_on == gc_arg_set[3]: # removeall: Remove every std line.
-        return line
+        return line  # Not implemented
     return line
 
 
 def check_file(path):
-    print(f'\n*** {str(path)}\n')
+
     out_line = ""
     with open(path, "r") as f_r:
+        first_change = True
         for line in f_r.readlines():
             o_line = consume_line(line)
             out_line += o_line if o_line else ""
             if gc_all_ex.findall(o_line):
+                if first_change:
+                    first_change = False
+                    print(f'*** {str(path)}') # Will not work for remove[all]
                 print(o_line.rstrip())
     with open(path, "w") as f_w:
         f_w.write(out_line)
@@ -56,6 +70,7 @@ def check_file(path):
 def check_src_dir():
     src = Path(g_src)
     if src.is_dir():
+        print(f'Inspecting "{str(Path.cwd().joinpath(src))}" source directory\n')
         for i in src.glob('*.c'):
             if i.is_file():
                 check_file(i)
@@ -83,6 +98,7 @@ def main():
         sys.exit()
 
     check_src_dir()
+
 
 if __name__ == '__main__':
     main()
