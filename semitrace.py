@@ -57,6 +57,17 @@ def consume_line(line):
         return False, line
     return False, line
 
+g_newline = ''
+
+def current_nl(f):
+    global g_newline
+
+    if g_newline:
+        return g_newline
+    g_newline = f.newlines
+    if isinstance(g_newline, tuple):
+        return '!!! Bad Newline\n'
+    return g_newline
 
 def check_file(path):
     header = f'*** {str(path)}'
@@ -71,7 +82,7 @@ def check_file(path):
                     print(header)
                 print(f'Removed: {o_line.rstrip()}')
             else:
-                out_line += o_line
+                out_line += o_line.rstrip() + current_nl(f_r)
             if not drop_it and gc_all_ex.findall(o_line):
                 if first_change:
                     first_change = False
