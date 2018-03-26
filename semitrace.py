@@ -66,7 +66,8 @@ def current_nl(f):
         return g_newline
     g_newline = f.newlines
     if isinstance(g_newline, tuple):
-        return '!!! Bad Newline\n'
+        print('!!! Bad Newline\n')
+        return '\n'
     return g_newline
 
 def check_file(path):
@@ -82,7 +83,7 @@ def check_file(path):
                     print(header)
                 print(f'Removed: {o_line.rstrip()}')
             else:
-                out_line += o_line.rstrip() + current_nl(f_r)
+                out_line += o_line.rstrip('\n') + current_nl(f_r)
             if not drop_it and gc_all_ex.findall(o_line):
                 if first_change:
                     first_change = False
